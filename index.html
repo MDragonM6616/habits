@@ -93,6 +93,17 @@
   .rule{height:1px;background:var(--line);margin:10px 0}
   .hint{font-size:12px;color:var(--muted)}
 
+  /* ---------- backup reminder ---------- */
+  .backup-banner{
+    display:flex;flex-direction:column;gap:10px;background:#FFF7E8;border:1px solid #F0DDB8;
+    border-left:6px solid var(--gold);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:12px;margin-bottom:12px;
+  }
+  .backup-banner[hidden]{display:none}
+  .bb-text b{display:block;font-size:14px;font-weight:900}
+  .bb-text span{display:block;font-size:12px;font-weight:700;color:#7A6A45;margin-top:2px}
+  .bb-actions{display:flex;gap:8px;flex-wrap:wrap}
+
   /* ---------- habit groups ---------- */
   .group{margin-bottom:12px}
   .group-head{display:flex;align-items:center;gap:8px;padding:0 4px 8px}
@@ -323,6 +334,18 @@
   <main>
     <!-- ================= TODAY ================= -->
     <section class="view" id="view-today" role="tabpanel" aria-label="Today">
+      <div class="backup-banner" id="backupBanner" hidden>
+        <div class="bb-text">
+          <b>Back up your streak · 该备份了</b>
+          <span id="backupNote">—</span>
+        </div>
+        <div class="bb-actions">
+          <button class="btn btn-primary btn-sm" id="bbExport" type="button">Export file</button>
+          <button class="btn btn-sm" id="bbCopy" type="button">Copy as text</button>
+          <button class="btn btn-sm" id="bbLater" type="button">Later</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-head">
           <h2 class="card-title">Today's weigh-in</h2>
@@ -381,6 +404,7 @@
               <button class="btn btn-sm" id="btnCopy" type="button">Copy as text</button>
             </div>
             <p class="hint" style="margin:0">Your data lives only in this browser. Export once a week — and before you clear browser data or switch phones.</p>
+            <p class="hint" id="lastBackupLine" style="margin:0">Never backed up yet.</p>
             <details>
               <summary class="hint" style="font-weight:800;cursor:pointer">Paste backup text to restore</summary>
               <textarea id="pasteBox" placeholder='{"app":"american-streak", ...}'></textarea>
@@ -631,6 +655,8 @@
     partial: ["Good start.", "Halfway there.", "Keep it rolling.", "Almost a full house."],
     full: "FULL HOUSE. Every line ticked."
   };
+  var BACKUP_AFTER_DAYS = 7;
+  var BACKUP_FIRST_NAG_DAYS = 3;
 
   /* ================= state ================= */
   var state = null;
@@ -1324,6 +1350,53 @@
     render();
     toast("Logged " + jinText(jin) + " jin.");
   }
+  /* ---- backup reminder ---- */
+  function daysSinceExport(){
+    var iso = state.meta && state.meta.lastExportAt;
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return Math.max(0, daysBetween(dayKey(d), dayKey()));
+  }
+  function needsBackup(){
+    if (!state.meta) return false;
+    var snooze = state.meta.snoozeUntil;
+    if (snooze && dayKey() <= snooze) return false;
+    if (totalCheckins() === 0) return false;
+    var d = daysSinceExport();
+    if (d === null) return daysTracked() >= BACKUP_FIRST_NAG_DAYS;
+    return d >= BACKUP_AFTER_DAYS;
+  }
+  function markExported(){
+    if (!state.meta) state.meta = {};
+    state.meta.lastExportAt = new Date().toISOString();
+    delete state.meta.snoozeUntil;
+    save();
+    render();
+  }
+  function snoozeBackup(){
+    if (!state.meta) state.meta = {};
+    state.meta.snoozeUntil = shiftKey(dayKey(), 2);
+    save();
+    render();
+    toast("Reminder snoozed for 2 days.");
+  }
+  function renderBackupBanner(){
+    var banner = $("#backupBanner");
+    if (!banner) return;
+    banner.hidden = !needsBackup();
+    var d = daysSinceExport();
+    $("#backupNote").textContent = d === null
+      ? "Never exported yet · 还没有导出过备份"
+      : ("Last backup " + d + " day" + (d === 1 ? "" : "s") + " ago · 上次备份 " + d + " 天前");
+    var line = $("#lastBackupLine");
+    if (line){
+      line.textContent = d === null
+        ? "Never backed up yet — tap Export backup above."
+        : ("Last backup: " + d + " day" + (d === 1 ? "" : "s") + " ago (" + String(state.meta.lastExportAt).slice(0,10) + ")");
+    }
+  }
+
   function exportPayload(){
     return JSON.stringify({ app:"american-streak", exportedAt:new Date().toISOString(), data:state }, null, 1);
   }
@@ -1339,6 +1412,7 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      markExported();
       toast("Backup file downloaded.");
     }catch(e){
       $("#pasteBox").value = txt;
@@ -1354,7 +1428,10 @@
       toast("Copy blocked — text placed in the box below.");
     };
     if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(txt).then(function(){ toast("Backup text copied."); }, put);
+      navigator.clipboard.writeText(txt).then(function(){
+        markExported();
+        toast("Backup text copied.");
+      }, put);
     } else put();
   }
   function openSettings(){
@@ -1395,6 +1472,7 @@
   /* ================= render dispatch ================= */
   function render(){
     renderHero();
+    renderBackupBanner();
     if (ui.tab === "today"){ renderHabits(); renderWeight(); }
     if (ui.tab === "stats") renderStats();
   }
@@ -1470,6 +1548,9 @@
 
     $("#btnExport").addEventListener("click", exportBackup);
     $("#btnCopy").addEventListener("click", copyBackup);
+    $("#bbExport").addEventListener("click", exportBackup);
+    $("#bbCopy").addEventListener("click", copyBackup);
+    $("#bbLater").addEventListener("click", snoozeBackup);
     $("#btnImportFile").addEventListener("click", function(){ $("#importFile").click(); });
     $("#importFile").addEventListener("change", function(){
       var f = this.files && this.files[0];

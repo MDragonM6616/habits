@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3C3B6E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="American Streak">
+<meta name="description" content="Daily habit tracker with an American-poster look. Tap to tick. See how many you finished today.">
+<title>American Streak — Daily Habit Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233C3B6E'/%3E%3Crect y='4' width='32' height='3' fill='%23B22234'/%3E%3Crect y='10' width='32' height='3' fill='%23FFFFFF'/%3E%3Crect y='16' width='32' height='3' fill='%23B22234'/%3E%3Crect y='22' width='32' height='3' fill='%23FFFFFF'/%3E%3Crect y='28' width='32' height='3' fill='%23B22234'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --red:#B22234;
+    --red-dark:#8E1B29;
+    --blue:#3C3B6E;
+    --blue-deep:#232148;
+    --blue-ink:#171634;
+    --cream:#FAF6EC;
+    --paper:#FFFFFF;
+    --ink:#161616;
+    --muted:#6E6A62;
+    --line:#E6E0D2;
+    --gold:#E8A33D;
+    --green:#1E7B4D;
+    --radius:16px;
+    --shadow:0 1px 0 rgba(22,22,22,.05), 0 10px 24px rgba(35,33,72,.08);
+    --safe-bottom:env(safe-area-inset-bottom, 0px);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    line-height:1.45;
+  }
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  h1,h2,h3,h4{margin:0;line-height:1.15}
+  a{color:var(--red-dark);text-decoration:underline;text-underline-offset:2px}
+  :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  .app{max-width:520px;margin:0 auto;padding-bottom:calc(86px + var(--safe-bottom))}
+  .view[hidden]{display:none}
+
+  /* ---------- poster hero ---------- */
+  .hero{position:relative;background:var(--blue-ink);color:#fff;padding:0 18px 20px;overflow:hidden}
+  .hero.done{background:linear-gradient(160deg,var(--red-dark),var(--blue-deep) 70%)}
+  .stripes{height:12px;margin:0 -18px 16px;background:repeating-linear-gradient(90deg,var(--red) 0 14px,#fff 14px 28px)}
+  .starfield{
+    position:absolute;inset:12px 0 auto;height:150px;pointer-events:none;opacity:.5;
+    background-image:radial-gradient(rgba(255,255,255,.75) 1px,transparent 1.4px),radial-gradient(rgba(255,255,255,.45) 1px,transparent 1.4px);
+    background-size:38px 38px,23px 23px;
+    background-position:6px 10px,17px 22px;
+  }
+  .hero-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+  .date-line{font-size:25px;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;margin-top:2px}
+  .brand{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-top:4px}
+  .gear{flex:0 0 auto;display:flex;gap:6px}
+  .hero-stats{position:relative;display:flex;align-items:center;gap:14px;margin-top:16px}
+  .ring{flex:0 0 auto;position:relative;width:104px;height:104px}
+  .ring svg{display:block;width:104px;height:104px;transform:rotate(-90deg)}
+  .ring .track{fill:none;stroke:rgba(255,255,255,.18);stroke-width:10}
+  .ring .bar{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .45s ease}
+  .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-num{font-size:29px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .ring-sub{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);white-space:nowrap}
+  .hero-copy{min-width:0}
+  .hero-head{font-size:19px;font-weight:900;text-transform:uppercase;letter-spacing:-.01em}
+  .hero-sub{font-size:13px;color:rgba(255,255,255,.8);margin-top:3px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{
+    font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    padding:5px 9px;border-radius:999px;white-space:nowrap;
+  }
+
+  /* ---------- layout blocks ---------- */
+  main{padding:14px 14px 0}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:14px;margin-bottom:12px;
+  }
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .card-title{font-size:13px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+  .card-note{font-size:11px;color:var(--muted);font-weight:600;text-align:right}
+  .rule{height:1px;background:var(--line);margin:10px 0}
+  .hint{font-size:12px;color:var(--muted)}
+
+  /* ---------- habit groups ---------- */
+  .group{margin-bottom:12px}
+  .group-head{display:flex;align-items:center;gap:8px;padding:0 4px 8px}
+  .group-name{font-size:13px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+  .group-cn{font-size:12px;color:var(--muted);font-weight:600}
+  .group-count{margin-left:auto;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .group-bar{height:5px;border-radius:999px;background:#EDE7DA;overflow:hidden;margin:0 4px 8px}
+  .group-bar > i{display:block;height:100%;background:var(--blue);border-radius:999px;transition:width .35s ease}
+  .group[data-group="BODY"] .group-bar > i{background:var(--red)}
+  .group[data-group="ENGLISH"] .group-bar > i{background:var(--blue)}
+  .group[data-group="ABROAD"] .group-bar > i{background:var(--gold)}
+
+  .habit{
+    display:flex;align-items:stretch;gap:6px;background:var(--paper);
+    border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    margin-bottom:8px;overflow:hidden;
+  }
+  .habit.edit{flex-direction:column;align-items:stretch;gap:0}
+  .habit.checked{background:#FFF9EF;border-color:#F0DDB8}
+  .rowhit{
+    flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:11px;
+    background:none;border:0;padding:12px 10px 12px 12px;text-align:left;min-height:52px;
+  }
+  .box{
+    flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid #C9C2B2;
+    display:flex;align-items:center;justify-content:center;background:#fff;
+    transition:background .18s,border-color .18s,transform .18s;
+  }
+  .box svg{
+    width:16px;height:16px;stroke:#fff;stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .22s ease .04s;
+  }
+  .habit.checked .box{background:var(--red);border-color:var(--red);transform:scale(1.04)}
+  .habit.checked .box svg{stroke-dashoffset:0}
+  .h-emoji{flex:0 0 auto;font-size:19px;line-height:1}
+  .h-name{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;overflow-wrap:anywhere}
+  .habit.checked .h-name{color:#4A4436}
+  .h-meta{flex:0 0 auto;font-size:11px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  .edit-tools{display:flex;flex-direction:row;border-top:1px solid var(--line);background:#FCFAF5}
+  .edit-tools button{
+    flex:1 1 0;min-height:44px;background:none;border:0;border-right:1px solid var(--line);
+    font-size:17px;line-height:1;color:var(--muted);
+  }
+  .edit-tools button:last-child{border-right:0}
+  .edit-tools button:disabled{opacity:.3}
+  .rename-input{flex:1 1 auto;min-width:0;border:2px solid var(--blue);border-radius:8px;padding:8px 10px;font-size:15px}
+  .add-btn{
+    width:100%;min-height:44px;background:none;border:2px dashed #D8D2C4;border-radius:14px;
+    font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--muted);
+  }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    min-height:44px;padding:8px 14px;border-radius:11px;border:1px solid var(--line);
+    background:#fff;font-size:13px;font-weight:800;letter-spacing:.02em;
+  }
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn-ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+  .btn-sm{min-height:44px;padding:6px 10px;font-size:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* ---------- weight ---------- */
+  .weigh-row{display:flex;align-items:center;gap:8px}
+  .step{
+    flex:0 0 auto;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;
+    font-size:20px;font-weight:800;line-height:1;
+  }
+  .weigh-input{
+    flex:1 1 auto;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line);
+    padding:0 12px;font-size:17px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;background:#FDFBF6;
+  }
+  .wbar{height:10px;border-radius:999px;background:#EDE7DA;margin-top:12px;overflow:hidden}
+  .wbar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--gold));transition:width .35s ease}
+  .wlegend{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--muted);margin-top:6px}
+
+  /* ---------- settings ---------- */
+  details.settings{border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
+  details.settings > summary{
+    list-style:none;cursor:pointer;padding:10px 2px;font-size:12px;font-weight:900;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  }
+  details.settings > summary::-webkit-details-marker{display:none}
+  .field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0}
+  .field label{font-size:13px;font-weight:700}
+  .field input,.field select{
+    min-height:40px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:#fff;
+    font-size:14px;font-weight:700;max-width:58%;
+  }
+  .stack{display:flex;flex-direction:column;gap:8px}
+  textarea{
+    width:100%;min-height:88px;border:1px solid var(--line);border-radius:12px;padding:10px;
+    font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical;
+  }
+
+  /* ---------- plan tab ---------- */
+  .track{border-left:6px solid var(--blue);padding-left:12px;margin-bottom:20px}
+  .track[data-track="BODY"]{border-color:var(--red)}
+  .track[data-track="ENGLISH"]{border-color:var(--blue)}
+  .track[data-track="ABROAD"]{border-color:var(--gold)}
+  .track h3{font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+  .track .cn{font-size:13px;color:var(--muted);font-weight:700;margin-top:2px}
+  .track ul{margin:10px 0 0;padding-left:18px}
+  .track li{font-size:13.5px;margin-bottom:6px}
+  .ms{
+    display:flex;gap:10px;align-items:baseline;background:#FCFAF5;border:1px solid var(--line);
+    border-radius:12px;padding:9px 11px;margin-top:8px;
+  }
+  .ms b{font-size:12px;font-weight:900;color:var(--red-dark);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .ms span{font-size:13px}
+  .fact{border:1px solid var(--line);border-radius:12px;padding:11px;margin-top:9px;background:#fff}
+  .fact h4{font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+  .fact .verified{
+    display:inline-block;margin-top:5px;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--green);background:#E9F5EE;border-radius:999px;padding:3px 8px;
+  }
+  .fact dl{margin:9px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+  .fact dt{font-weight:800;color:var(--muted);white-space:nowrap}
+  .fact dd{margin:0}
+  .callout{background:#FFF7E8;border:1px solid #F0DDB8;border-radius:12px;padding:11px;font-size:13px;margin-top:10px}
+
+  /* ---------- stats ---------- */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .tile{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+  .tile .k{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .tile .v{font-size:25px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:3px}
+  .tile .s{font-size:11px;color:var(--muted);font-weight:600}
+  .months{display:grid;gap:1.5px;margin-bottom:3px}
+  .months span{font-size:9px;font-weight:800;color:var(--muted)}
+  .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:1.5px}
+  .heat i{aspect-ratio:1;border-radius:2px;background:#EDE7DA;display:block}
+  .heat i[data-lv="1"]{background:#F6D3CE}
+  .heat i[data-lv="2"]{background:#E89A8C}
+  .heat i[data-lv="3"]{background:#CF5245}
+  .heat i[data-lv="4"]{background:#B22234}
+  .heat i[data-empty="1"]{background:transparent}
+  .legend{display:flex;align-items:center;gap:5px;justify-content:flex-end;font-size:10px;color:var(--muted);font-weight:700;margin-top:8px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:block}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:104px;margin-top:6px}
+  .barcol{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
+  .barcol .stackbar{flex:1 1 auto;width:100%;display:flex;align-items:flex-end;background:#F3EEE3;border-radius:7px;overflow:hidden}
+  .barcol .stackbar i{display:block;width:100%;background:var(--blue);border-radius:7px 7px 0 0;transition:height .35s ease}
+  .barcol b{font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase}
+  .rt-row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .rt-name{flex:0 0 84px;font-size:11.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+  .rt-bar{flex:1 1 auto;height:11px;border-radius:999px;background:#EDE7DA;overflow:hidden}
+  .rt-bar > i{display:block;height:100%;border-radius:999px;background:var(--red)}
+  .rt-row[data-g="ENGLISH"] .rt-bar > i{background:var(--blue)}
+  .rt-row[data-g="ABROAD"] .rt-bar > i{background:var(--gold)}
+  .rt-val{flex:0 0 40px;text-align:right;font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .rank{list-style:none;margin:0;padding:0}
+  .rank li{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .rank li:last-child{border-bottom:0}
+  .rank .n{flex:0 0 auto;font-size:15px}
+  .rank .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .rank .c{flex:0 0 auto;font-size:12px;font-weight:900;font-variant-numeric:tabular-nums}
+  .rank .c span{color:var(--muted);font-weight:700}
+  .empty-note{font-size:12.5px;color:var(--muted);padding:6px 0}
+
+  /* ---------- tabbar ---------- */
+  .tabbar{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;
+    display:flex;background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+    padding:6px 6px calc(6px + var(--safe-bottom));z-index:20;
+  }
+  .tabbar button{
+    flex:1 1 0;min-height:52px;background:none;border:0;border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  }
+  .tabbar button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button[aria-selected="true"]{color:var(--red);background:#FDF3EE}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;transform:translate(-50%,14px);bottom:calc(98px + var(--safe-bottom));
+    background:var(--blue-ink);color:#fff;padding:10px 16px;border-radius:999px;
+    font-size:13px;font-weight:800;box-shadow:0 12px 28px rgba(23,22,52,.3);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30;max-width:88vw;text-align:center;
+  }
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:360px){
+    .heat{gap:1px}
+    .months{gap:1px}
+    .date-line{font-size:22px}
+    .tile .v{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero" id="hero">
+    <div class="stripes" aria-hidden="true"></div>
+    <div class="starfield" aria-hidden="true"></div>
+    <div class="hero-top">
+      <div>
+        <div class="kicker">Today</div>
+        <h1 class="date-line" id="heroDate">—</h1>
+        <div class="brand">American Streak · 打勾就算完成</div>
+      </div>
+      <div class="gear">
+        <button class="btn btn-ghost btn-sm" id="editToggle" aria-pressed="false" type="button">Edit</button>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="ring">
+        <svg viewBox="0 0 104 104" aria-hidden="true">
+          <circle class="track" cx="52" cy="52" r="45"></circle>
+          <circle class="bar" id="ringBar" cx="52" cy="52" r="45" stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
+        </svg>
+        <div class="ring-label">
+          <span class="ring-num" id="ringNum">0</span>
+          <span class="ring-sub">done</span>
+        </div>
+      </div>
+      <div class="hero-copy">
+        <div class="hero-head" id="heroHead">Nothing yet — start with one.</div>
+        <div class="hero-sub" id="heroSub">Tap any line below to tick it off.</div>
+        <div class="chips">
+          <span class="chip" id="chipStreak">0-day streak</span>
+          <span class="chip" id="chipGrad">—</span>
+          <span class="chip" id="chipWeight">—</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= TODAY ================= -->
+    <section class="view" id="view-today" role="tabpanel" aria-label="Today">
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Today's weigh-in</h2>
+          <span class="card-note">斤 jin · stored as kg</span>
+        </div>
+        <div class="weigh-row">
+          <button class="step" id="wMinus" type="button" aria-label="Minus half a jin">−</button>
+          <input class="weigh-input" id="wInput" type="number" inputmode="decimal" step="0.5" min="30" max="200" aria-label="Today's weight in jin" placeholder="143.0">
+          <button class="step" id="wPlus" type="button" aria-label="Plus half a jin">+</button>
+          <button class="btn btn-primary" id="wSave" type="button">Log</button>
+        </div>
+        <div class="wbar" id="wbarWrap" role="img" aria-label="Weight progress">
+          <i id="wbarFill" style="width:0%"></i>
+        </div>
+        <div class="wlegend">
+          <span id="wStart">Start —</span>
+          <span id="wNow">Now —</span>
+          <span id="wTarget">Target —</span>
+        </div>
+      </div>
+
+      <div id="habitList"></div>
+
+      <details class="settings">
+        <summary>Settings · backup</summary>
+        <div class="card" style="margin-top:6px">
+          <div class="field">
+            <label for="setGrad">Graduation date</label>
+            <input type="date" id="setGrad">
+          </div>
+          <div class="field">
+            <label for="setStartW">Start weight (jin)</label>
+            <input type="number" id="setStartW" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="setTargetW">Target weight (jin)</label>
+            <input type="number" id="setTargetW" step="0.5" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="setCut">A day starts at</label>
+            <select id="setCut">
+              <option value="0">00:00 midnight</option>
+              <option value="1">01:00</option>
+              <option value="2">02:00</option>
+              <option value="3">03:00</option>
+              <option value="4">04:00 (recommended)</option>
+              <option value="5">05:00</option>
+              <option value="6">06:00</option>
+            </select>
+          </div>
+          <div class="rule"></div>
+          <div class="stack">
+            <div class="row">
+              <button class="btn btn-primary" id="btnExport" type="button">Export backup</button>
+              <button class="btn" id="btnImportFile" type="button">Import file</button>
+              <button class="btn btn-sm" id="btnCopy" type="button">Copy as text</button>
+            </div>
+            <p class="hint" style="margin:0">Your data lives only in this browser. Export once a week — and before you clear browser data or switch phones.</p>
+            <details>
+              <summary class="hint" style="font-weight:800;cursor:pointer">Paste backup text to restore</summary>
+              <textarea id="pasteBox" placeholder='{"app":"american-streak", ...}'></textarea>
+              <button class="btn btn-sm" id="btnImportText" type="button">Restore from pasted text</button>
+            </details>
+            <div class="row">
+              <button class="btn btn-sm" id="btnResetToday" type="button">Reset today</button>
+              <button class="btn btn-sm" id="btnWipe" type="button">Erase everything</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ================= PLAN ================= -->
+    <section class="view" id="view-plan" role="tabpanel" aria-label="Plan" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">The plan · 你的三条线</h2>
+          <span class="card-note">2026 → 2029</span>
+        </div>
+        <p class="hint" style="margin:0">从 2026 年 10 月到 2029 年 6 月毕业，你有 32 个月。三条线同时走，每条线每天只要求一件今天就能做完的事。</p>
+      </div>
+
+      <div class="card">
+        <div class="track" data-track="BODY">
+          <h3>Body · 减脂</h3>
+          <div class="cn">174cm / 143 斤 → 130 斤</div>
+          <ul>
+            <li><b>数字目标：</b>143 斤 → 130 斤（BMI 约 23.6 → 21.5）。你现在的 BMI 只是"正常偏上"，真正要降的是体脂和腰围，不是把自己饿瘦。</li>
+            <li><b>速度：</b>每周 −0.5~0.8 斤刚好，8 个月能掉 20 斤左右；掉太快掉的是肌肉和水，最后会反弹回来。</li>
+            <li><b>每天三件事：</b>运动 30 分钟（宿舍就能做：深蹲、俯卧撑、划船、臀桥各 4 组）；走够 8000 步；不喝含糖饮料（一杯奶茶 300–500 大卡，换无糖茶一天就省下来）。</li>
+            <li><b>食堂吃法：</b>先吃蛋白质（鸡胸/鱼/蛋/豆制品），再吃菜，最后吃主食；主食减到平时的 2/3；油炸和酱汁减半。</li>
+            <li><b>睡眠：</b>睡够 7 小时。熬夜会让你第二天多吃 300 大卡，比任何节食都致命。</li>
+            <li><b>称体重：</b>每天早上空腹称，只看 7 天平均线，单日波动不用管。</li>
+          </ul>
+          <div class="ms"><b>2027-06</b><span>135 斤；能连续做 20 个标准俯卧撑；称体重成为习惯</span></div>
+          <div class="ms"><b>2028-06</b><span>131 斤；力量训练变成默认日程，体脂明显下降</span></div>
+          <div class="ms"><b>2029-06</b><span>130 斤并保持 6 个月；体检指标全部正常</span></div>
+        </div>
+
+        <div class="track" data-track="ENGLISH">
+          <h3>English · 英语进阶</h3>
+          <div class="cn">四级还没过 → 雅思 6.5</div>
+          <ul>
+            <li><b>你的第一道门槛其实很低：</b>澳洲打工度假签证（462）只要求"功能性英语"= IELTS 均分 4.5（2026-10-10 官网核对）。4.5 分不是"英语很好"，是"能听懂基本对话"。别被"我英语差"吓退。</li>
+            <li><b>每天：</b>50 个单词（只背高频 3000）；30 分钟精听（一句一句听写，不是放着当背景音）；15 分钟影子跟读（跟着音频同步念，练嘴巴）。</li>
+            <li><b>每周：</b>1 次真人开口（语伴、外教，或对着手机复述今天做了什么）；1 套四级真题计时。</li>
+            <li><b>每月：</b>1 套雅思真题（剑桥 10 以后），记下分数曲线，别只看单次成绩。</li>
+            <li><b>为什么这样排：</b>四六级是给学校看的，雅思是给出国用的，但核心都是词汇 + 听力 + 阅读，可以同时准备。</li>
+          </ul>
+          <div class="ms"><b>2027-06</b><span>四级 425+（目标 500）；能听懂无字幕美剧 60%</span></div>
+          <div class="ms"><b>2028-01</b><span>考出雅思 4.5 —— 462 签证门槛达成，之后随时可以参加抽签</span></div>
+          <div class="ms"><b>2028-06</b><span>六级通过；雅思 5.5</span></div>
+          <div class="ms"><b>2029-06</b><span>雅思 6.5；能用英文面试和写邮件</span></div>
+        </div>
+
+        <div class="track" data-track="ABROAD">
+          <h3>Abroad · 出国（GIS / 测绘方向）</h3>
+          <div class="cn">土地资源管理 → 空间数据技能</div>
+          <ul>
+            <li><b>先把专业说清楚：</b>土地资源管理本身不是海外通用资质，中国的土地制度知识在澳新美几乎用不上。但你的专业里有一套能带出国的硬技能：<b>GIS、遥感、测量与空间数据</b>。海外叫 surveyor / GIS technician / geospatial analyst，是真实存在的技术岗，靠作品和证书，不靠人脉。</li>
+            <li><b>技能线：</b>QGIS（免费，先装它）→ ArcGIS 基础 → Python（pandas + geopandas + rasterio）→ 遥感（SNAP / ENVI 入门）→ 跟学院老师做 1 个真实项目 → 把 3 个项目放进作品集（截图 + 数据来源 + 一句话说明）。</li>
+            <li><b>为什么这条线和英语是一件事：</b>海外招 GIS 岗最先看"你能不能看懂英文技术文档、能不能用英文写清楚一段分析"，所以听读能力直接决定你能不能拿到面试。</li>
+          </ul>
+        </div>
+
+        <div class="track" data-track="ABROAD">
+          <h3>The visa facts · 签证事实</h3>
+          <div class="cn">以下为 2026-10-10 从官方站点核对。政策每年会变，正式申请前请再打开官网看一遍。</div>
+
+          <div class="fact">
+            <h4>① 澳大利亚 462 打工度假签证（你的第一站）</h4>
+            <span class="verified">Verified 2026-10-10 · Australia</span>
+            <dl>
+              <dt>名额</dt><dd>中国大陆护照每年 <b>5,000</b> 个名额，通过抽签（ballot）预申请</dd>
+              <dt>年龄</dt><dd>申请时 18–30 岁（含），必须在满 31 岁前递交</dd>
+              <dt>学历</dt><dd>有大专/本科以上学历，<b>或完成 2 年本科学习</b> —— 你大二读完就符合</dd>
+              <dt>英语</dt><dd>仅需"功能性英语"：IELTS 均分 <b>4.5</b>（或 PTE 30 / TOEFL 32 等同），成绩 12 个月内有效</dd>
+              <dt>资金</dt><dd>约 <b>AUD 5,000</b> 生活费证明 + 离境机票钱</dd>
+              <dt>时长</dt><dd>首次 12 个月，可在当地工作；二签/三签需要做指定地区、指定行业的工作（农业、旅游、建筑等）</dd>
+              <dt>限制</dt><dd>必须在澳大利亚境外申请；不能带子女；此前没拿过 462 / 417</dd>
+            </dl>
+            <p class="hint" style="margin:9px 0 0">官网：<a href="https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-462/first-work-holiday-462" target="_blank" rel="noopener">first Work and Holiday visa (462)</a> · <a href="https://immi.homeaffairs.gov.au/what-we-do/whm-program/status-of-country-caps" target="_blank" rel="noopener">country caps</a> · <a href="https://immi.homeaffairs.gov.au/what-we-do/whm-program/latest-news/new-work-and-holiday-subclass-462-visa-pre-application" target="_blank" rel="noopener">ballot 预申请</a></p>
+          </div>
+
+          <div class="fact">
+            <h4>② 新西兰打工度假签证（备选）</h4>
+            <span class="verified">Verified 2026-10-10 · New Zealand</span>
+            <dl>
+              <dt>名额</dt><dd>中国大陆每年 <b>1,000</b> 个名额，非常抢手</dd>
+              <dt>年龄</dt><dd>18–30 岁，必须是中国大陆公民且住在中国</dd>
+              <dt>学历</dt><dd>至少高中毕业证，并需 CSSD（学信网）认证</dd>
+              <dt>英语</dt><dd>需提供英语成绩证明（具体分数用官网 English language tests 工具查）</dd>
+              <dt>资金</dt><dd><b>NZD 4,200</b> 生活费证明 + 全程医疗保险 + 离境计划</dd>
+              <dt>费用/时长</dt><dd>签证费 NZD 770；最长 12 个月；必须在中国境内申请</dd>
+            </dl>
+            <p class="hint" style="margin:9px 0 0">官网：<a href="https://www.immigration.govt.nz/visas/china-working-holiday-visa" target="_blank" rel="noopener">China Working Holiday Visa</a></p>
+          </div>
+
+          <div class="fact">
+            <h4>③ 美国：为什么不能一步到位</h4>
+            <span class="verified">Verified 2026-10-10 · USA</span>
+            <dl>
+              <dt>打工度假</dt><dd>中国大陆和美国之间没有打工度假签证，这条路不存在</dd>
+              <dt>J-1 实习/培训</dt><dd>可在美合法工作 12–18 个月，但必须通过指定 sponsor、需在读或毕业 12 个月内，且<b>不直接换身份</b></dd>
+              <dt>H-2A/H-2B</dt><dd>临时农业/非农季节工，必须有美国雇主担保，且中国大陆是否在当年"合资格国家名单"上需逐年核对</dd>
+              <dt>F-1 → OPT → H-1B</dt><dd>主流路径，但美国学费加生活费远超你 2–10 万的预算，且 H-1B 靠抽签</dd>
+            </dl>
+            <div class="callout"><b>结论：</b>想低成本去美国上班，最现实的做法不是直接冲美国，而是<b>先用澳洲或新西兰的打工度假签证拿到海外工作履历、把英语练到能面试</b>，再申请海外 GIS/测绘岗位或跨国公司，最后走 H-1B、L-1 或读研。美国是终点，不是起点。</div>
+          </div>
+
+          <div class="fact">
+            <h4>④ 备选路线（以官网为准）</h4>
+            <dl>
+              <dt>日本</dt><dd>特定技能 / 新的育成就劳制度：门槛是日语 N4 + 技能考试，农业、食品、建筑、护理等行业可选，成本低，可长期续签</dd>
+              <dt>德国</dt><dd>双元制职业教育：免学费 + 有津贴，但需要德语 B1/B2，且要学历认证</dd>
+              <dt>加拿大</dt><dd>省提名与偏远地区试点有农业/技工类通道，但语言要求更高（雅思 6 左右）</dd>
+            </dl>
+            <div class="callout"><b>待办：</b>正式申请前逐条复核：澳洲内政部 Australia Home Affairs、新西兰移民局、USCIS / travel.state.gov、日本出入国在留管理厅、加拿大 IRCC。</div>
+          </div>
+
+          <div class="fact">
+            <h4>⑤ 时间表（对齐 2029-06 毕业）</h4>
+            <div class="ms"><b>2027</b><span>大二暑假：考出雅思 4.5；装 QGIS 做出第一个地图作品；体重降到 135 斤</span></div>
+            <div class="ms"><b>2028</b><span>大三：六级 + 雅思 5.5；Python / geopandas；找测绘或 GIS 实习；开始存钱</span></div>
+            <div class="ms"><b>2028-12</b><span>盯紧 5,000 名额抽签开放时间（每年时间不同，官网公布），备好护照、学历材料、存款证明</span></div>
+            <div class="ms"><b>2029-06</b><span>毕业 → 递交 462 申请 → 落地澳洲，做测绘/GIS 或农业相关的工作攒履历</span></div>
+            <div class="ms"><b>2030+</b><span>用海外履历 + 雅思 6.5，申请澳洲技术移民或美国雇主岗位</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STATS ================= -->
+    <section class="view" id="view-stats" role="tabpanel" aria-label="Stats" hidden>
+      <div class="tiles" id="tiles"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Last 12 months</h2>
+          <span class="card-note">每天完成比例</span>
+        </div>
+        <div class="months" id="heatMonths" aria-hidden="true"></div>
+        <div class="heat" id="heat" role="img" aria-label="Daily completion heatmap, last 12 months"></div>
+        <div class="legend">
+          <span>Less</span>
+          <i style="background:#EDE7DA"></i>
+          <i style="background:#F6D3CE"></i>
+          <i style="background:#E89A8C"></i>
+          <i style="background:#CF5245"></i>
+          <i style="background:#B22234"></i>
+          <span>More</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Last 7 days</h2>
+          <span class="card-note" id="weekNote">—</span>
+        </div>
+        <div class="bars" id="weekBars"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Completion by track</h2>
+          <span class="card-note" id="rtNote">—</span>
+        </div>
+        <div id="trackRates"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Habit ranking</h2>
+          <span class="card-note">累计天数 · lifetime</span>
+        </div>
+        <ul class="rank" id="rankList"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Weight · 体重</h2>
+          <span class="card-note">斤 jin</span>
+        </div>
+        <div id="weightChart"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" id="tab-today" aria-selected="true" aria-controls="view-today">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 9 17.5 20 6.5"/></svg>
+      Today
+    </button>
+    <button type="button" role="tab" id="tab-plan" aria-selected="false" aria-controls="view-plan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 12h9M13 12l4-4M13 12l4 4"/></svg>
+      Plan
+    </button>
+    <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V10M12 19V5M19 19v-6"/></svg>
+      Stats
+    </button>
+  </nav>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= constants ================= */
+  var KEY = "habitapp.v1";
+  var GROUPS = [
+    { id:"BODY",    en:"Body",    cn:"减脂", emoji:"💪" },
+    { id:"ENGLISH", en:"English", cn:"英语", emoji:"📚" },
+    { id:"ABROAD",  en:"Abroad",  cn:"出国", emoji:"🌍" }
+  ];
+  var SEED = [
+    { group:"BODY",    emoji:"🏃", name:"30 min workout" },
+    { group:"BODY",    emoji:"🥤", name:"No sugary drinks" },
+    { group:"BODY",    emoji:"👟", name:"8,000 steps" },
+    { group:"BODY",    emoji:"⚖️", name:"Morning weigh-in" },
+    { group:"ENGLISH", emoji:"🔤", name:"50 new words" },
+    { group:"ENGLISH", emoji:"🎧", name:"30 min listening" },
+    { group:"ENGLISH", emoji:"🗣️", name:"15 min shadowing" },
+    { group:"ABROAD",  emoji:"🗺️", name:"30 min GIS practice" },
+    { group:"ABROAD",  emoji:"🌍", name:"15 min abroad research" }
+  ];
+  var PRAISE = [
+    "Nice work, partner.",
+    "You're on fire!",
+    "That's how it's done.",
+    "Keep grinding.",
+    "Boom. Next one.",
+    "Momentum is building.",
+    "You showed up today.",
+    "One more down.",
+    "Fastball, right down the middle.",
+    "Strong move.",
+    "That's a keeper.",
+    "Now do it again tomorrow."
+  ];
+  var HEADS = {
+    zero: "Nothing yet — start with one.",
+    partial: ["Good start.", "Halfway there.", "Keep it rolling.", "Almost a full house."],
+    full: "FULL HOUSE. Every line ticked."
+  };
+
+  /* ================= state ================= */
+  var state = null;
+  var ui = { tab:"today", editing:false, renamingId:null, adding:null, weighDirty:false };
+  var CUTOFF_DEFAULT = 4;
+  var DEFAULT_SETTINGS = {
+    graduation:"2029-06-30", startWeightJin:143, targetWeightJin:130, dayCutoffHour:CUTOFF_DEFAULT
+  };
+
+  function settingsDefaults(){
+    return {
+      graduation:DEFAULT_SETTINGS.graduation,
+      startWeightJin:DEFAULT_SETTINGS.startWeightJin,
+      targetWeightJin:DEFAULT_SETTINGS.targetWeightJin,
+      dayCutoffHour:DEFAULT_SETTINGS.dayCutoffHour
+    };
+  }
+
+  function uid(){
+    return "h" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3);
+  }
+  function defaultHabits(){
+    var out = [];
+    for (var i=0;i<SEED.length;i++){
+      out.push({
+        id:uid(), name:SEED[i].name, group:SEED[i].group, emoji:SEED[i].emoji,
+        order:i, archived:false, createdAt:dayKey()
+      });
+    }
+    return out;
+  }
+  function freshState(){
+    return {
+      version:1,
+      habits:defaultHabits(),
+      log:{},
+      weights:{},
+      settings:settingsDefaults(),
+      meta:{ created:dayKey() }
+    };
+  }
+  function normalize(s){
+    if (!s || typeof s !== "object") return freshState();
+    if (!Array.isArray(s.habits) || !s.habits.length) s.habits = defaultHabits();
+    s.log = (s.log && typeof s.log === "object") ? s.log : {};
+    s.weights = (s.weights && typeof s.weights === "object") ? s.weights : {};
+    s.settings = (s.settings && typeof s.settings === "object") ? s.settings : {};
+    var dflt = DEFAULT_SETTINGS;
+    for (var k in dflt) if (typeof s.settings[k] === "undefined") s.settings[k] = dflt[k];
+    if (typeof s.settings.dayCutoffHour !== "number") s.settings.dayCutoffHour = CUTOFF_DEFAULT;
+    s.habits.forEach(function(h,i){
+      if (typeof h.order !== "number") h.order = i;
+      if (typeof h.archived !== "boolean") h.archived = false;
+      if (typeof h.createdAt !== "string") h.createdAt = dayKey();
+      if (!h.id) h.id = uid();
+    });
+    if (!s.meta) s.meta = { created:dayKey() };
+    s.version = 1;
+    return s;
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return freshState();
+      return normalize(JSON.parse(raw));
+    }catch(e){
+      console.warn("load failed, starting fresh", e);
+      return freshState();
+    }
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){ console.warn("save failed", e); }
+  }
+
+  /* ================= dates ================= */
+  function cutoffMs(){
+    var h = (state && state.settings && typeof state.settings.dayCutoffHour === "number")
+      ? state.settings.dayCutoffHour : CUTOFF_DEFAULT;
+    return h * 3600 * 1000;
+  }
+  function dayKey(d){
+    var dt = d ? new Date(d.getTime()) : new Date();
+    dt = new Date(dt.getTime() - cutoffMs());
+    var y = dt.getFullYear();
+    var m = String(dt.getMonth()+1).padStart(2,"0");
+    var dd = String(dt.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + dd;
+  }
+  function keyToDate(key){
+    var p = key.split("-");
+    return new Date(Number(p[0]), Number(p[1])-1, Number(p[2]), 12, 0, 0);
+  }
+  function shiftKey(key, days){
+    var d = keyToDate(key);
+    d.setDate(d.getDate()+days);
+    return dayKey(d);
+  }
+  function daysBetween(aKey, bKey){
+    return Math.round((keyToDate(bKey) - keyToDate(aKey)) / 86400000);
+  }
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function prettyDate(key){
+    var d = keyToDate(key);
+    return MON[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  }
+  function shortDate(key){
+    var d = keyToDate(key);
+    return MON[d.getMonth()] + " " + d.getDate();
+  }
+
+  /* ================= derived ================= */
+  function activeHabits(){
+    return state.habits.filter(function(h){ return !h.archived; })
+      .sort(function(a,b){ return a.order - b.order; });
+  }
+  function byGroup(g){
+    return activeHabits().filter(function(h){ return h.group === g; });
+  }
+  function isDone(key, id){ return (state.log[key] || []).indexOf(id) !== -1; }
+  function countFor(key){
+    var active = {};
+    activeHabits().forEach(function(h){ active[h.id] = 1; });
+    return (state.log[key] || []).filter(function(id){ return active[id]; }).length;
+  }
+  function todayCount(){ return countFor(dayKey()); }
+  function totalActive(){ return activeHabits().length; }
+  function ratioFor(key){
+    var total = totalActive();
+    if (!total) return 0;
+    return Math.min(1, countFor(key)/total);
+  }
+  function currentStreak(){
+    var key = dayKey();
+    if (countFor(key) === 0) key = shiftKey(key, -1);
+    var n = 0;
+    while (countFor(key) > 0 && n < 4000){ n++; key = shiftKey(key, -1); }
+    return n;
+  }
+  function longestStreak(){
+    var keys = Object.keys(state.log).filter(function(k){ return (state.log[k]||[]).length; }).sort();
+    var best = 0, run = 0, prev = null;
+    for (var i=0;i<keys.length;i++){
+      if (prev !== null && daysBetween(prev, keys[i]) === 1) run++;
+      else run = 1;
+      if (run > best) best = run;
+      prev = keys[i];
+    }
+    return best;
+  }
+  function firstLogKey(){
+    var keys = Object.keys(state.log).filter(function(k){ return (state.log[k]||[]).length; }).sort();
+    return keys.length ? keys[0] : dayKey();
+  }
+  function daysTracked(){ return Math.max(1, daysBetween(firstLogKey(), dayKey()) + 1); }
+  function totalCheckins(){
+    var n = 0;
+    for (var k in state.log) n += (state.log[k]||[]).length;
+    return n;
+  }
+  function habitCount(id){
+    var n = 0;
+    for (var k in state.log) if ((state.log[k]||[]).indexOf(id) !== -1) n++;
+    return n;
+  }
+  function monthStats(){
+    var today = dayKey();
+    var month = today.slice(0,7);
+    var sum = 0;
+    for (var k in state.log){
+      if (k.slice(0,7) === month) sum += countFor(k);
+    }
+    var days = Math.max(1, daysBetween(month + "-01", today) + 1);
+    var capacity = days * Math.max(1, totalActive());
+    return { rate: Math.round(100*sum/capacity), sum:sum, days:days };
+  }
+  function weightSeries(){
+    var keys = Object.keys(state.weights).filter(function(k){ return typeof state.weights[k] === "number"; }).sort();
+    return keys.map(function(k){ return { key:k, jin: state.weights[k]*2 }; });
+  }
+  function latestWeight(){
+    var s = weightSeries();
+    return s.length ? s[s.length-1] : null;
+  }
+
+  /* ================= helpers ================= */
+  function $(sel){ return document.querySelector(sel); }
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (typeof text === "string") n.textContent = text;
+    return n;
+  }
+  function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+  var toastTimer = null;
+  function toast(msg){
+    var t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 2200);
+  }
+  function buzz(ms){
+    if (navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} }
+  }
+  function jinText(v){ return (Math.round(v*10)/10).toFixed(1); }
+
+  /* ================= render: hero ================= */
+  function renderHero(){
+    var key = dayKey();
+    var done = todayCount();
+    var total = totalActive();
+    var ratio = total ? done/total : 0;
+
+    $("#heroDate").textContent = prettyDate(key);
+    $("#ringNum").textContent = done + "/" + total;
+    var C = 2*Math.PI*45;
+    $("#ringBar").setAttribute("stroke-dashoffset", String(C*(1-ratio)));
+    $("#hero").classList.toggle("done", ratio >= 1 && total > 0);
+
+    if (done === 0) $("#heroHead").textContent = HEADS.zero;
+    else if (ratio >= 1) $("#heroHead").textContent = HEADS.full;
+    else $("#heroHead").textContent = HEADS.partial[Math.min(3, Math.floor(ratio*4))];
+    $("#heroSub").textContent = done + " of " + total + " ticked off today · " + Math.max(0,total-done) + " to go";
+
+    $("#chipStreak").textContent = currentStreak() + "-day streak";
+
+    var grad = state.settings.graduation;
+    if (grad){
+      var left = daysBetween(key, grad);
+      $("#chipGrad").textContent = left >= 0
+        ? "Graduation in " + left + " days"
+        : "Graduated " + Math.abs(left) + " days ago";
+    } else {
+      $("#chipGrad").textContent = "Set graduation date";
+    }
+
+    var lw = latestWeight();
+    var target = Number(state.settings.targetWeightJin) || 0;
+    $("#chipWeight").textContent = lw
+      ? ("Now " + jinText(lw.jin) + " jin" + (target ? " · target " + jinText(target) : ""))
+      : "Log your weight";
+  }
+
+  /* ================= render: habits ================= */
+  function habitRow(h){
+    var key = dayKey();
+    var done = isDone(key, h.id);
+    var wrap = el("div", "habit" + (done ? " checked" : ""));
+    wrap.setAttribute("data-id", h.id);
+    if (ui.editing) wrap.className = wrap.className + " edit";
+
+    if (ui.editing && ui.renamingId === h.id){
+      var input = el("input", "rename-input");
+      input.type = "text";
+      input.value = h.name;
+      input.setAttribute("aria-label", "Habit name");
+      var saveBtn = el("button", "btn btn-primary btn-sm", "Save");
+      saveBtn.type = "button";
+      saveBtn.style.margin = "6px";
+      var commit = function(){
+        var v = input.value.trim();
+        if (v) h.name = v;
+        ui.renamingId = null;
+        save(); render();
+      };
+      saveBtn.addEventListener("click", commit);
+      input.addEventListener("keydown", function(e){
+        if (e.key === "Enter"){ e.preventDefault(); commit(); }
+        if (e.key === "Escape"){ ui.renamingId = null; render(); }
+      });
+      wrap.appendChild(input);
+      wrap.appendChild(saveBtn);
+      setTimeout(function(){ input.focus(); input.select(); }, 0);
+      return wrap;
+    }
+
+    var hit = el("button", "rowhit");
+    hit.type = "button";
+    hit.setAttribute("aria-pressed", done ? "true" : "false");
+    hit.setAttribute("aria-label", h.name + (done ? " — done, tap to undo" : " — tap to tick off"));
+
+    var box = el("span", "box");
+    box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>';
+    hit.appendChild(box);
+    hit.appendChild(el("span", "h-emoji", h.emoji || "•"));
+    hit.appendChild(el("span", "h-name", h.name));
+    var c = habitCount(h.id);
+    if (c > 0) hit.appendChild(el("span", "h-meta", c + "d"));
+
+    hit.addEventListener("click", function(){
+      if (ui.editing) return;
+      toggleHabit(h.id);
+    });
+    wrap.appendChild(hit);
+
+    if (ui.editing){
+      var tools = el("div", "edit-tools");
+      var list = byGroup(h.group);
+      var idx = list.indexOf(h);
+      var up = el("button", null, "↑"); up.type = "button"; up.setAttribute("aria-label", "Move up");
+      var dn = el("button", null, "↓"); dn.type = "button"; dn.setAttribute("aria-label", "Move down");
+      var rn = el("button", null, "✎"); rn.type = "button"; rn.setAttribute("aria-label", "Rename");
+      var del = el("button", null, "✕"); del.type = "button"; del.setAttribute("aria-label", "Delete");
+      if (idx <= 0) up.disabled = true;
+      if (idx === -1 || idx >= list.length-1) dn.disabled = true;
+      up.addEventListener("click", function(){ moveHabit(h, -1); });
+      dn.addEventListener("click", function(){ moveHabit(h, 1); });
+      rn.addEventListener("click", function(){ ui.renamingId = h.id; render(); });
+      del.addEventListener("click", function(){ deleteHabit(h); });
+      tools.appendChild(up); tools.appendChild(dn); tools.appendChild(rn); tools.appendChild(del);
+      wrap.appendChild(tools);
+    }
+    return wrap;
+  }
+
+  function renderHabits(){
+    var host = $("#habitList");
+    clear(host);
+    var key = dayKey();
+
+    GROUPS.forEach(function(g){
+      var habits = byGroup(g.id);
+      var done = habits.filter(function(h){ return isDone(key, h.id); }).length;
+
+      var sec = el("section", "group");
+      sec.setAttribute("data-group", g.id);
+
+      var head = el("div", "group-head");
+      head.appendChild(el("span", "group-name", g.emoji + " " + g.en));
+      head.appendChild(el("span", "group-cn", g.cn));
+      head.appendChild(el("span", "group-count", done + "/" + habits.length));
+      sec.appendChild(head);
+
+      var bar = el("div", "group-bar");
+      var fill = el("i");
+      fill.style.width = (habits.length ? Math.round(100*done/habits.length) : 0) + "%";
+      bar.appendChild(fill);
+      sec.appendChild(bar);
+
+      habits.forEach(function(h){ sec.appendChild(habitRow(h)); });
+
+      if (ui.editing){
+        if (ui.adding === g.id){
+          var addWrap = el("div", "habit");
+          var inp = el("input", "rename-input");
+          inp.type = "text";
+          inp.placeholder = "New habit in " + g.en + "…";
+          inp.setAttribute("aria-label", "New habit name");
+          var ok = el("button", "btn btn-primary btn-sm", "Add");
+          ok.type = "button";
+          ok.style.margin = "6px";
+          var doAdd = function(){
+            var v = inp.value.trim();
+            if (v){
+              state.habits.push({
+                id:uid(), name:v, group:g.id, emoji:g.emoji, order:maxOrder()+1,
+                archived:false, createdAt:dayKey()
+              });
+              save();
+            }
+            ui.adding = null;
+            render();
+          };
+          ok.addEventListener("click", doAdd);
+          inp.addEventListener("keydown", function(e){
+            if (e.key === "Enter"){ e.preventDefault(); doAdd(); }
+            if (e.key === "Escape"){ ui.adding = null; render(); }
+          });
+          addWrap.appendChild(inp);
+          addWrap.appendChild(ok);
+          sec.appendChild(addWrap);
+          setTimeout(function(){ inp.focus(); }, 0);
+        } else {
+          var add = el("button", "add-btn", "＋ Add habit to " + g.en);
+          add.type = "button";
+          add.addEventListener("click", function(){ ui.adding = g.id; render(); });
+          sec.appendChild(add);
+        }
+      }
+      host.appendChild(sec);
+    });
+  }
+  function maxOrder(){
+    return state.habits.reduce(function(m,h){ return Math.max(m, h.order || 0); }, 0) + 1;
+  }
+
+  /* ================= render: weight card ================= */
+  function renderWeight(){
+    var s = state.settings;
+    var lw = latestWeight();
+    var now = lw ? lw.jin : null;
+    $("#wStart").textContent = "Start " + jinText(s.startWeightJin) + " jin";
+    $("#wNow").textContent = now ? "Now " + jinText(now) + " jin" : "Now —";
+    $("#wTarget").textContent = "Target " + jinText(s.targetWeightJin) + " jin";
+    var span = s.startWeightJin - s.targetWeightJin;
+    var pct = 0;
+    if (span > 0 && now !== null) pct = Math.max(0, Math.min(100, 100*(s.startWeightJin - now)/span));
+    $("#wbarFill").style.width = pct.toFixed(0) + "%";
+    $("#wbarWrap").setAttribute("aria-label", now
+      ? ("Weight progress " + pct.toFixed(0) + " percent from " + jinText(s.startWeightJin) + " jin toward " + jinText(s.targetWeightJin) + " jin")
+      : "No weight logged yet");
+
+    if (!ui.weighDirty){
+      var today = dayKey();
+      $("#wInput").value = state.weights[today] ? jinText(state.weights[today]*2) : "";
+    }
+    $("#setGrad").value = s.graduation || "";
+    $("#setStartW").value = s.startWeightJin;
+    $("#setTargetW").value = s.targetWeightJin;
+    $("#setCut").value = String(s.dayCutoffHour);
+  }
+
+  /* ================= render: stats ================= */
+  function renderTiles(){
+    var host = $("#tiles");
+    clear(host);
+    var m = monthStats();
+    var lw = latestWeight();
+    var items = [
+      { k:"Done today", v:String(todayCount()) + "/" + totalActive(), s:prettyDate(dayKey()) },
+      { k:"Current streak", v:String(currentStreak()), s:"Longest " + longestStreak() + " days" },
+      { k:"This month", v:m.rate + "%", s:m.sum + " ticks over " + m.days + " days" },
+      { k:"Weight", v:lw ? jinText(lw.jin) : "—", s:lw ? (jinText(state.settings.startWeightJin - lw.jin) + " jin down from start") : "No weigh-ins yet" }
+    ];
+    items.forEach(function(it){
+      var t = el("div", "tile");
+      t.appendChild(el("div", "k", it.k));
+      t.appendChild(el("div", "v", it.v));
+      t.appendChild(el("div", "s", it.s));
+      host.appendChild(t);
+    });
+  }
+
+  function renderHeat(){
+    var host = $("#heat"), months = $("#heatMonths");
+    clear(host);
+    clear(months);
+    var today = dayKey();
+    var todayDate = keyToDate(today);
+    var startDate = new Date(todayDate.getTime());
+    startDate.setDate(startDate.getDate() - 364);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    var totalDays = Math.round((todayDate - startDate)/86400000) + 1;
+    var cols = Math.ceil(totalDays/7);
+
+    months.style.gridTemplateColumns = "repeat(" + cols + ",1fr)";
+
+    var labels = [];
+    var lastMonth = -1;
+    for (var c=0;c<cols;c++){
+      var wk = new Date(startDate.getTime());
+      wk.setDate(wk.getDate() + c*7);
+      var lab = "";
+      for (var j=0;j<7;j++){
+        var d = new Date(wk.getTime());
+        d.setDate(d.getDate()+j);
+        if (d.getMonth() !== lastMonth && d.getDate() <= 7){
+          lab = MON[d.getMonth()];
+          lastMonth = d.getMonth();
+          break;
+        }
+      }
+      labels.push(lab);
+    }
+    labels.forEach(function(l){ months.appendChild(el("span", null, l)); });
+
+    var total = Math.max(1, totalActive());
+    for (var i=0;i<cols*7;i++){
+      var day = new Date(startDate.getTime());
+      day.setDate(day.getDate() + i);
+      var cell = el("i");
+      if (day > todayDate){
+        cell.setAttribute("data-empty", "1");
+        host.appendChild(cell);
+        continue;
+      }
+      var k = dayKey(day);
+      var r = ratioFor(k);
+      var lv = r <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil(r*4)));
+      if (lv > 0) cell.setAttribute("data-lv", String(lv));
+      cell.setAttribute("title", prettyDate(k) + " · " + countFor(k) + "/" + total);
+      cell.setAttribute("aria-label", prettyDate(k) + " " + countFor(k) + " of " + total);
+      host.appendChild(cell);
+    }
+  }
+
+  function renderWeek(){
+    var host = $("#weekBars");
+    clear(host);
+    var today = dayKey();
+    var total = Math.max(1, totalActive());
+    var sum = 0;
+    for (var i=6;i>=0;i--){
+      var k = shiftKey(today, -i);
+      var c = countFor(k);
+      sum += c;
+      var col = el("div", "barcol");
+      col.setAttribute("title", prettyDate(k) + " · " + c + "/" + total);
+      col.appendChild(el("b", null, String(c)));
+      var stack = el("div", "stackbar");
+      var fill = el("i");
+      fill.style.height = Math.round(100*c/total) + "%";
+      if (c === 0) fill.style.background = "transparent";
+      stack.appendChild(fill);
+      col.appendChild(stack);
+      col.appendChild(el("b", null, DOW[keyToDate(k).getDay()].slice(0,3)));
+      host.appendChild(col);
+    }
+    $("#weekNote").textContent = sum + " ticks · avg " + (Math.round(10*sum/7)/10) + "/day";
+  }
+
+  function renderTrackRates(){
+    var host = $("#trackRates");
+    clear(host);
+    var days = daysTracked();
+    GROUPS.forEach(function(g){
+      var habits = byGroup(g.id);
+      if (!habits.length) return;
+      var hits = 0;
+      habits.forEach(function(h){ hits += habitCount(h.id); });
+      var pct = Math.min(100, Math.round(100*hits/(habits.length*days)));
+      var row = el("div", "rt-row");
+      row.setAttribute("data-g", g.id);
+      row.setAttribute("title", g.en + " " + pct + "% over " + days + " days");
+      row.appendChild(el("span", "rt-name", g.emoji + " " + g.en));
+      var bar = el("div", "rt-bar");
+      var fill = el("i");
+      fill.style.width = pct + "%";
+      bar.appendChild(fill);
+      row.appendChild(bar);
+      row.appendChild(el("span", "rt-val", pct + "%"));
+      host.appendChild(row);
+    });
+    $("#rtNote").textContent = totalCheckins() + " ticks in " + days + " days";
+  }
+
+  function renderRank(){
+    var host = $("#rankList");
+    clear(host);
+    var days = daysTracked();
+    var all = state.habits.slice().sort(function(a,b){ return habitCount(b.id) - habitCount(a.id); });
+    if (!all.length){ host.appendChild(el("li", "empty-note", "No habits yet.")); return; }
+    all.forEach(function(h){
+      var c = habitCount(h.id);
+      var li = el("li");
+      li.appendChild(el("span", "n", h.emoji || "•"));
+      li.appendChild(el("span", "nm", h.name));
+      var cbox = el("span", "c", String(c) + " ");
+      cbox.appendChild(el("span", null, "(" + Math.min(100, Math.round(100*c/days)) + "%)"));
+      li.appendChild(cbox);
+      host.appendChild(li);
+    });
+  }
+
+  function renderWeightChart(){
+    var host = $("#weightChart");
+    clear(host);
+    var s = weightSeries();
+    var target = Number(state.settings.targetWeightJin);
+    var start = Number(state.settings.startWeightJin);
+    if (s.length < 2){
+      host.appendChild(el("p", "empty-note", "Log your weight for a few days and the trend line will appear here."));
+      return;
+    }
+    var W = Math.max(240, Math.min(480, host.clientWidth || 320));
+    var H = 152, padL = 8, padR = 8, padT = 16, padB = 20;
+    var vals = s.map(function(p){ return p.jin; });
+    if (isFinite(target)) vals.push(target);
+    if (isFinite(start)) vals.push(start);
+    var min = Math.min.apply(null, vals) - 1.5;
+    var max = Math.max.apply(null, vals) + 1.5;
+    function x(i){ return padL + (W-padL-padR) * (s.length === 1 ? 0.5 : i/(s.length-1)); }
+    function y(v){ return padT + (H-padT-padB) * (1 - (v-min)/(max-min)); }
+
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", String(H));
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Weight trend in jin from " + jinText(s[0].jin) + " to " + jinText(s[s.length-1].jin) + ", target " + jinText(target));
+    svg.style.display = "block";
+
+    function refLine(v, color, dash){
+      var l = document.createElementNS(NS, "line");
+      l.setAttribute("x1", String(padL));
+      l.setAttribute("x2", String(W-padR));
+      l.setAttribute("y1", String(y(v)));
+      l.setAttribute("y2", String(y(v)));
+      l.setAttribute("stroke", color);
+      l.setAttribute("stroke-width", "1.5");
+      if (dash) l.setAttribute("stroke-dasharray", "5 4");
+      svg.appendChild(l);
+    }
+    if (isFinite(target)) refLine(target, "#1E7B4D", false);
+    if (isFinite(start) && start !== target) refLine(start, "#C9C2B2", true);
+
+    var pl = document.createElementNS(NS, "polyline");
+    pl.setAttribute("points", s.map(function(p,i){ return x(i) + "," + y(p.jin); }).join(" "));
+    pl.setAttribute("fill", "none");
+    pl.setAttribute("stroke", "#B22234");
+    pl.setAttribute("stroke-width", "2.5");
+    pl.setAttribute("stroke-linejoin", "round");
+    pl.setAttribute("stroke-linecap", "round");
+    svg.appendChild(pl);
+
+    s.forEach(function(p,i){
+      var c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", String(x(i)));
+      c.setAttribute("cy", String(y(p.jin)));
+      c.setAttribute("r", i === s.length-1 ? "4" : "2.5");
+      c.setAttribute("fill", i === s.length-1 ? "#B22234" : "#E89A8C");
+      svg.appendChild(c);
+    });
+
+    function label(text, px, py, anchor, color){
+      var t = document.createElementNS(NS, "text");
+      t.setAttribute("x", String(px));
+      t.setAttribute("y", String(py));
+      t.setAttribute("font-size", "11");
+      t.setAttribute("font-weight", "700");
+      t.setAttribute("fill", color);
+      t.setAttribute("text-anchor", anchor);
+      t.textContent = text;
+      svg.appendChild(t);
+    }
+    if (isFinite(target)) label("target " + jinText(target), padL + 2, y(target) - 5, "start", "#1E7B6E");
+    label(jinText(s[s.length-1].jin), Math.min(W-padR, x(s.length-1)), Math.max(12, y(s[s.length-1].jin) - 8), "end", "#8E1B29");
+    label(shortDate(s[0].key), padL + 2, H - 5, "start", "#6E6A62");
+    label(shortDate(s[s.length-1].key), W - padR, H - 5, "end", "#6E6A62");
+    host.appendChild(svg);
+  }
+
+  function renderStats(){
+    renderTiles();
+    renderHeat();
+    renderWeek();
+    renderTrackRates();
+    renderRank();
+    renderWeightChart();
+  }
+
+  /* ================= actions ================= */
+  function toggleHabit(id){
+    var key = dayKey();
+    var list = state.log[key] ? state.log[key].slice() : [];
+    var i = list.indexOf(id);
+    if (i === -1){
+      list.push(id);
+      state.log[key] = list;
+      save();
+      buzz(18);
+      var total = totalActive();
+      if (total > 0 && countFor(key) >= total) toast("Full house! All " + total + " done today.");
+      else toast(PRAISE[Math.floor(Math.random()*PRAISE.length)]);
+    } else {
+      list.splice(i,1);
+      if (list.length) state.log[key] = list;
+      else delete state.log[key];
+      save();
+      buzz(8);
+    }
+    render();
+  }
+  function moveHabit(h, dir){
+    var list = byGroup(h.group);
+    var i = list.indexOf(h);
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    var a = list[i], b = list[j];
+    var tmp = a.order;
+    a.order = b.order;
+    b.order = tmp;
+    save();
+    render();
+  }
+  function deleteHabit(h){
+    if (!window.confirm('Delete "' + h.name + '"? Past ticks stay in your history but stop counting.')) return;
+    state.habits = state.habits.filter(function(x){ return x.id !== h.id; });
+    save();
+    render();
+    toast("Deleted: " + h.name);
+  }
+  function setWeight(jin){
+    if (!isFinite(jin) || jin <= 0) return;
+    state.weights[dayKey()] = jin/2;
+    save();
+    ui.weighDirty = false;
+    render();
+    toast("Logged " + jinText(jin) + " jin.");
+  }
+  function exportPayload(){
+    return JSON.stringify({ app:"american-streak", exportedAt:new Date().toISOString(), data:state }, null, 1);
+  }
+  function exportBackup(){
+    var txt = exportPayload();
+    try{
+      var blob = new Blob([txt], { type:"application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "habits-backup-" + dayKey() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      toast("Backup file downloaded.");
+    }catch(e){
+      $("#pasteBox").value = txt;
+      openSettings();
+      toast("Download blocked — use the text box below.");
+    }
+  }
+  function copyBackup(){
+    var txt = exportPayload();
+    var put = function(){
+      $("#pasteBox").value = txt;
+      openSettings();
+      toast("Copy blocked — text placed in the box below.");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ toast("Backup text copied."); }, put);
+    } else put();
+  }
+  function openSettings(){
+    var d = document.querySelector("details.settings");
+    if (d) d.open = true;
+  }
+  function mergeImport(obj){
+    if (!obj || typeof obj !== "object") throw new Error("not an object");
+    var data = (obj.data && obj.data.habits) ? obj.data : (obj.habits ? obj : null);
+    if (!data || !Array.isArray(data.habits)) throw new Error("no habits array found");
+    var incoming = normalize(JSON.parse(JSON.stringify(data)));
+
+    var ids = {};
+    state.habits.forEach(function(h){ ids[h.id] = 1; });
+    incoming.habits.forEach(function(h){
+      if (!ids[h.id]){ state.habits.push(h); ids[h.id] = 1; }
+    });
+    for (var k in incoming.log){
+      var a = state.log[k] ? state.log[k].slice() : [];
+      (incoming.log[k] || []).forEach(function(id){ if (a.indexOf(id) === -1) a.push(id); });
+      if (a.length) state.log[k] = a;
+    }
+    for (var d in incoming.weights){
+      if (typeof state.weights[d] !== "number") state.weights[d] = incoming.weights[d];
+    }
+    save();
+  }
+  function handleImportText(txt){
+    try{
+      mergeImport(JSON.parse(txt));
+      render();
+      toast("Backup restored.");
+    }catch(e){
+      toast("Restore failed: " + e.message + ". Your data is unchanged.");
+    }
+  }
+
+  /* ================= render dispatch ================= */
+  function render(){
+    renderHero();
+    if (ui.tab === "today"){ renderHabits(); renderWeight(); }
+    if (ui.tab === "stats") renderStats();
+  }
+  function selectTab(name){
+    ui.tab = name;
+    ["today","plan","stats"].forEach(function(t){
+      var btn = $("#tab-" + t);
+      var view = $("#view-" + t);
+      var on = (t === name);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+      view.hidden = !on;
+    });
+    render();
+    window.scrollTo(0,0);
+  }
+
+  /* ================= events ================= */
+  function bind(){
+    $("#tab-today").addEventListener("click", function(){ selectTab("today"); });
+    $("#tab-plan").addEventListener("click", function(){ selectTab("plan"); });
+    $("#tab-stats").addEventListener("click", function(){ selectTab("stats"); });
+
+    $("#editToggle").addEventListener("click", function(){
+      ui.editing = !ui.editing;
+      ui.renamingId = null;
+      ui.adding = null;
+      this.setAttribute("aria-pressed", ui.editing ? "true" : "false");
+      this.textContent = ui.editing ? "Done" : "Edit";
+      if (ui.tab !== "today") selectTab("today"); else renderHabits();
+    });
+
+    function nudge(step){
+      var cur = parseFloat($("#wInput").value);
+      if (!isFinite(cur)){
+        var lw = latestWeight();
+        cur = lw ? lw.jin : Number(state.settings.startWeightJin);
+      }
+      $("#wInput").value = jinText(cur + step);
+      ui.weighDirty = true;
+    }
+    $("#wMinus").addEventListener("click", function(){ nudge(-0.5); });
+    $("#wPlus").addEventListener("click", function(){ nudge(0.5); });
+    $("#wSave").addEventListener("click", function(){
+      var v = parseFloat($("#wInput").value);
+      if (isFinite(v)) setWeight(v);
+      else toast("Enter a weight first.");
+    });
+    $("#wInput").addEventListener("input", function(){ ui.weighDirty = true; });
+    $("#wInput").addEventListener("keydown", function(e){
+      if (e.key === "Enter"){
+        e.preventDefault();
+        var v = parseFloat(this.value);
+        if (isFinite(v)) setWeight(v);
+      }
+    });
+
+    $("#setGrad").addEventListener("change", function(){
+      state.settings.graduation = this.value;
+      save(); render();
+    });
+    $("#setStartW").addEventListener("change", function(){
+      var v = parseFloat(this.value);
+      if (isFinite(v) && v > 0){ state.settings.startWeightJin = v; save(); render(); }
+    });
+    $("#setTargetW").addEventListener("change", function(){
+      var v = parseFloat(this.value);
+      if (isFinite(v) && v > 0){ state.settings.targetWeightJin = v; save(); render(); }
+    });
+    $("#setCut").addEventListener("change", function(){
+      state.settings.dayCutoffHour = Number(this.value);
+      save(); render();
+    });
+
+    $("#btnExport").addEventListener("click", exportBackup);
+    $("#btnCopy").addEventListener("click", copyBackup);
+    $("#btnImportFile").addEventListener("click", function(){ $("#importFile").click(); });
+    $("#importFile").addEventListener("change", function(){
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var r = new FileReader();
+      r.onload = function(){ handleImportText(String(r.result)); };
+      r.readAsText(f);
+      this.value = "";
+    });
+    $("#btnImportText").addEventListener("click", function(){
+      var txt = $("#pasteBox").value.trim();
+      if (!txt){ toast("Paste backup text first."); return; }
+      handleImportText(txt);
+    });
+    $("#btnResetToday").addEventListener("click", function(){
+      if (!window.confirm("Clear today's ticks? Past days stay.")) return;
+      delete state.log[dayKey()];
+      save(); render();
+      toast("Today cleared.");
+    });
+    $("#btnWipe").addEventListener("click", function(){
+      if (!window.confirm("Erase ALL habits, ticks and weights in this browser? Export a backup first if you are unsure.")) return;
+      if (!window.confirm("Really erase everything? This cannot be undone.")) return;
+      state = freshState();
+      save(); ui.editing = false; ui.renamingId = null; ui.adding = null;
+      $("#editToggle").textContent = "Edit";
+      $("#editToggle").setAttribute("aria-pressed", "false");
+      render();
+      toast("Everything reset.");
+    });
+
+    var lastKey = dayKey();
+    setInterval(function(){
+      var k = dayKey();
+      if (k !== lastKey){ lastKey = k; render(); }
+    }, 60000);
+    document.addEventListener("visibilitychange", function(){
+      if (!document.hidden){
+        var k = dayKey();
+        if (k !== lastKey){ lastKey = k; }
+        render();
+      }
+    });
+    window.addEventListener("resize", function(){
+      if (ui.tab === "stats") renderWeightChart();
+    });
+  }
+
+  /* ================= boot ================= */
+  state = load();
+  save();
+  bind();
+  selectTab("today");
+})();
+</script>
+</body>
+</html>
